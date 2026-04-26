@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>AI SmartAlloc Pro | Intelligent Resource Suite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Chart.js for graphical analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- SheetJS for export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(145deg, #fff0f5 0%, #ffe0ea 100%);
+      min-height: 100vh;
+      transition: background 0.3s;
+    }
+    body.dark-mode {
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+      color: #e0e0e0;
+    }
+    body.dark-mode .card, body.dark-mode .stat-card, body.dark-mode .room-badge, body.dark-mode .event-block {
+      background: rgba(30, 30, 50, 0.95);
+      border-color: #4a4a6a;
+    }
+    body.dark-mode .card-header { background: rgba(50, 50, 70, 0.8); color: #ff9ec0; }
+    body.dark-mode input, body.dark-mode select { background: #2a2a3e; color: #fff; border-color: #5a5a7a; }
+    /* Login Page Styles */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #f72d72, #c026d3, #a1335b);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+      transition: all 0.5s ease;
+    }
+    .login-card {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 48px;
+      padding: 2.5rem;
+      width: 380px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+      animation: fadeInUp 0.6s ease;
+    }
+    body.dark-mode .login-card { background: #2a2a3e; color: white; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .login-card h2 { font-size: 1.8rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #f72d72, #c026d3); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .login-input { width: 100%; padding: 14px 18px; margin: 10px 0; border-radius: 60px; border: 1.5px solid #ffc0d0; background: white; font-size: 1rem; }
+    .login-btn { width: 100%; background: linear-gradient(135deg, #f72d72, #c026d3); color: white; border: none; padding: 14px; border-radius: 60px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 15px; transition: transform 0.2s; }
+    .login-btn:hover { transform: scale(1.02); }
+    .error-msg { color: #dc2626; font-size: 0.75rem; margin-top: 10px; }
+    .hidden { display: none; }
+    /* Main App Styles */
+    .nav-bar {
+      background: rgba(255, 245, 248, 0.96);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 180, 200, 0.6);
+      padding: 0.8rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    body.dark-mode .nav-bar { background: rgba(30, 30, 50, 0.95); border-color: #4a4a6a; }
+    .logo { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.4rem; background: linear-gradient(135deg, #bc2c6e, #e0185c); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .nav-links { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .nav-btn {
+      background: transparent;
+      border: 1.5px solid #ffc0d0;
+      padding: 8px 22px;
+      border-radius: 44px;
+      font-weight: 600;
+      color: #b34e74;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn.active { background: linear-gradient(135deg, #f72d72, #c026d3); color: white; border-color: #c026d3; }
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.8rem; }
+    .page { display: none; animation: fadeSlide 0.35s ease; }
+    .page.active-page { display: block; }
+    @keyframes fadeSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .card { background: rgba(255, 250, 252, 0.94); backdrop-filter: blur(12px); border-radius: 32px; border: 1px solid rgba(255, 200, 215, 0.7); margin-bottom: 1.6rem; overflow: hidden; }
+    .card-header { padding: 1.2rem 1.8rem; background: rgba(255, 235, 240, 0.6); border-bottom: 2px solid #ffc0d0; display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.1rem; color: #bc5a7c; }
+    .card-body { padding: 1.8rem; }
+    .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; }
+    .grid-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6rem; }
+    @media (max-width: 900px) { .grid-2col, .grid-3col { grid-template-columns: 1fr; } }
+    input, select { width: 100%; padding: 12px 16px; border-radius: 28px; border: 1.5px solid #ffcddb; background: white; font-size: 0.9rem; outline: none; }
+    .total-auto { background: #fef0f5; border-color: #f7b0c4; color: #b83e6b; font-weight: 700; }
+    .type-tabs { display: flex; gap: 10px; }
+    .type-btn { flex: 1; padding: 10px; border-radius: 40px; border: 1.5px solid #ffc0d0; background: rgba(255,240,245,0.7); font-weight: 600; cursor: pointer; text-align: center; }
+    .type-btn.active { background: linear-gradient(135deg, #f72d72, #e0185c); color: white; }
+    .progress-bar { height: 8px; background: #ffe0ea; border-radius: 12px; overflow: hidden; margin: 12px 0; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #60a5fa, #f72d72); transition: width 0.4s ease; }
+    .result-card { background: linear-gradient(135deg, #fff8fa, #fff2f7); border-radius: 24px; padding: 1.5rem; animation: fadeSlideUp 0.45s ease; }
+    @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    .smart-badge { display: inline-flex; background: linear-gradient(135deg, #f72d72, #c026d3); color: white; padding: 5px 14px; border-radius: 40px; font-size: 0.7rem; font-weight: 800; margin-bottom: 14px; }
+    .warning-tag { background: #ffe2e6; color: #c73659; padding: 6px 14px; border-radius: 30px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 6px; }
+    .success-tag { background: #e0f7ef; color: #197e60; }
+    .stat-card { background: white; border-radius: 24px; padding: 1.3rem; text-align: center; box-shadow: 0 6px 14px rgba(0,0,0,0.04); cursor: pointer; transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-5px); }
+    .stat-number { font-size: 2.2rem; font-weight: 800; color: #bc2c6e; }
+    .rooms-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 1rem; }
+    .room-badge { background: white; border-radius: 18px; padding: 12px; border: 1.5px solid #ffd5e2; transition: all 0.2s; cursor: pointer; }
+    .room-badge.selected { border-color: #f72d72; background: #fff0f6; transform: scale(1.02); }
+    .timetable { overflow-x: auto; }
+    .week-grid { display: grid; grid-template-columns: 70px repeat(7, 1fr); gap: 5px; min-width: 700px; }
+    .grid-header { background: rgba(255,200,215,0.5); padding: 10px; text-align: center; font-weight: 800; font-size: 0.7rem; border-radius: 14px; }
+    .event-block { background: #fff0f5; border-radius: 14px; padding: 8px; font-size: 0.7rem; cursor: pointer; transition: all 0.15s; border-left: 3px solid #f72d72; }
+    button { background: linear-gradient(135deg, #f72d72, #c026d3); border: none; padding: 10px 20px; border-radius: 40px; color: white; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .search-box { padding: 8px 16px; border-radius: 30px; border: 1.5px solid #ffcddb; width: 200px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; justify-content: space-between; align-items: center; }
+    .chart-container { height: 300px; margin: 1rem 0; }
+    footer { text-align: center; padding: 1.8rem; color: #b27c92; font-size: 0.7rem; border-top: 1px solid #ffd5e2; }
+    .logout-btn { background: rgba(247,45,114,0.15); color: #f72d72; border: 1px solid #f72d72; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <i class="fas fa-brain" style="font-size: 3rem; background: linear-gradient(135deg, #f72d72, #c026d3); background-clip: text; -webkit-background-clip: text; color: transparent;"></i>
+    <h2>SmartAlloc AI</h2>
+    <p style="margin-bottom: 1.5rem; color: #b34e74;">Intelligent Resource Suite</p>
+    <input type="text" id="loginUsername" class="login-input" placeholder="Username" value="admin">
+    <input type="password" id="loginPassword" class="login-input" placeholder="Password" value="admin123">
+    <button class="login-btn" onclick="handleLogin()"><i class="fas fa-arrow-right-to-bracket"></i> Login</button>
+    <div id="loginError" class="error-msg"></div>
+    <p style="margin-top: 1rem; font-size: 0.7rem; color: #b27c92;">Demo: admin / admin123</p>
+  </div>
+</div>
+
+<!-- MAIN APP (initially hidden) -->
+<div id="mainApp" style="display: none;">
+<div class="nav-bar">
+  <div class="logo"><i class="fas fa-brain"></i> SmartAlloc <span style="font-weight:400;">|</span> AI Pro</div>
+  <div class="nav-links">
+    <button class="nav-btn active" data-page="main"><i class="fas fa-chart-pie"></i> Dashboard</button>
+    <button class="nav-btn" data-page="allocate"><i class="fas fa-magic"></i> Allocator</button>
+    <button class="nav-btn" data-page="schedule"><i class="fas fa-calendar-alt"></i> Schedule</button>
+    <button class="nav-btn" data-page="analytics"><i class="fas fa-chart-line"></i> Analytics</button>
+    <button class="nav-btn" id="darkModeToggle"><i class="fas fa-moon"></i> Dark</button>
+    <button class="nav-btn logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+</div>
+
+<div class="page-container">
+  <!-- DASHBOARD -->
+  <div id="mainPage" class="page active-page">
+    <div class="toolbar"><input type="text" id="roomSearch" placeholder="🔍 Search rooms..." class="search-box" oninput="filterRooms()"></div>
+    <div class="grid-3col">
+      <div class="stat-card"><div class="stat-number" id="totalRoomsStat">0</div><div>Total Rooms</div><i class="fas fa-building"></i></div>
+      <div class="stat-card"><div class="stat-number" id="totalSchedulesStat">0</div><div>Scheduled Classes</div><i class="fas fa-calendar"></i></div>
+      <div class="stat-card"><div class="stat-number" id="avgUtilStat">0%</div><div>Avg. Utilization</div><i class="fas fa-chart-line"></i></div>
+    </div>
+    <div class="grid-2col">
+      <div class="card"><div class="card-header"><i class="fas fa-microchip"></i> AI Intelligence Hub</div><div class="card-body"><p>⚡ <strong>Smart Allocation:</strong> Gender-balanced seating, minimal waste, dynamic scoring.</p><p>🎯 Total = Boys + Girls (auto-calculated by AI)</p><button onclick="navigateTo('allocate')"><i class="fas fa-arrow-right"></i> Start Allocation</button><button id="printDashboardBtn" style="margin-left:10px;"><i class="fas fa-print"></i> Print</button></div></div>
+      <div class="card"><div class="card-header"><i class="fas fa-clock"></i> Recent Activity</div><div class="card-body" id="recentActivity"></div></div>
+    </div>
+    <div class="card"><div class="card-header"><i class="fas fa-door-open"></i> Room Inventory <span id="roomCountDisplay"></span></div><div class="card-body" id="mainRoomList"></div></div>
+  </div>
+
+  <!-- ALLOCATOR -->
+  <div id="allocatePage" class="page">
+    <div class="grid-2col">
+      <div class="card"><div class="card-header"><i class="fas fa-sliders-h"></i> Allocation Engine</div><div class="card-body">
+          <div class="input-group"><label><i class="fas fa-mars"></i> Boys</label><input type="number" id="allocBoys" value="28"></div>
+          <div class="input-group"><label><i class="fas fa-venus"></i> Girls</label><input type="number" id="allocGirls" value="20"></div>
+          <div class="input-group"><label><i class="fas fa-calculator"></i> Total (AI auto-sum)</label><input type="number" id="allocTotal" readonly class="total-auto"></div>
+          <div class="progress-bar"><div class="progress-fill" id="allocGenderFill"></div></div><div style="display:flex; justify-content:space-between;"><span id="allocBoysPct">Boys 0%</span><span id="allocGirlsPct">Girls 0%</span></div>
+          <div class="type-tabs" id="allocTypeTabs"><div class="type-btn active" data-type="Lecture">📖 Lecture</div><div class="type-btn" data-type="Lab">🔬 Lab</div><div class="type-btn" data-type="Event">🎉 Event</div></div>
+          <button id="runAllocBtn" style="width:100%; margin-top:1rem;"><i class="fas fa-brain"></i> Run AI Allocation</button>
+          <button id="exportAllocBtn" style="width:100%; margin-top:0.5rem;"><i class="fas fa-file-excel"></i> Export to Excel</button>
+      </div></div>
+      <div class="card"><div class="card-header"><i class="fas fa-robot"></i> AI Suggestion</div><div class="card-body" id="allocResultArea"></div></div>
+    </div>
+    <div class="card"><div class="card-header"><i class="fas fa-list"></i> Room Library</div><div class="card-body"><div id="allocRoomsGrid" class="rooms-mini-grid"></div></div></div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div id="schedulePage" class="page">
+    <div class="card"><div class="card-header"><i class="fas fa-plus-circle"></i> Add Class</div><div class="card-body"><div style="display:flex; flex-wrap:wrap; gap:12px;"><input type="text" id="schedSubject" placeholder="Subject"><input type="text" id="schedFaculty" placeholder="Faculty"><select id="schedDay"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select><input type="time" id="schedStart" value="09:00"><input type="time" id="schedEnd" value="10:00"><select id="schedType"><option>Lecture</option><option>Lab</option><option>Event</option></select><input type="number" id="schedStudents" placeholder="Students" value="35"><button id="addSchedBtn">Add</button></div><div id="schedConflict" style="color:#c73659; margin-top:12px;"></div></div></div>
+    <div class="toolbar"><button id="exportScheduleBtn"><i class="fas fa-file-excel"></i> Export to Excel</button><button id="printScheduleBtn"><i class="fas fa-print"></i> Print Schedule</button></div>
+    <div class="card"><div class="card-header"><i class="fas fa-table"></i> Weekly Timetable</div><div class="card-body" id="schedTimetable"></div></div>
+  </div>
+
+  <!-- ANALYTICS with GRAPHICAL CHARTS -->
+  <div id="analyticsPage" class="page">
+    <div class="grid-2col">
+      <div class="card"><div class="card-header"><i class="fas fa-chart-pie"></i> Gender Distribution</div><div class="card-body"><canvas id="genderChart" style="max-height: 250px;"></canvas></div></div>
+      <div class="card"><div class="card-header"><i class="fas fa-chart-bar"></i> Room Type Usage</div><div class="card-body"><canvas id="typeChart" style="max-height: 250px;"></canvas></div></div>
+    </div>
+    <div class="card"><div class="card-header"><i class="fas fa-chart-line"></i> Room Utilization Trends</div><div class="card-body"><canvas id="utilChart" style="max-height: 280px;"></canvas></div></div>
+    <div class="card"><div class="card-header"><i class="fas fa-history"></i> Allocation History</div><div class="card-body" id="analyticsHistory"></div></div>
+  </div>
+  <footer>✨ AI Smart Resource Allocator • Gender-aware • Real-time • Graphical Analytics</footer>
+</div>
+</div>
+
+<script>
+  // --- ROOMS DATABASE (20+ rooms) ---
+  const ROOMS = [
+    { id: "R01", name: "🌸 Rose Hall", capacity: 45, type: "Lecture" }, { id: "R02", name: "📖 Ivory Lecture", capacity: 60, type: "Lecture" },
+    { id: "R03", name: "✨ Harmony Room", capacity: 50, type: "Lecture" }, { id: "R04", name: "💡 Innovation Hub", capacity: 72, type: "Lecture" },
+    { id: "R05", name: "🏛️ Royal Hall", capacity: 85, type: "Lecture" }, { id: "R06", name: "📚 Library Hall", capacity: 40, type: "Lecture" },
+    { id: "R07", name: "🎓 Graduation Hall", capacity: 120, type: "Lecture" }, { id: "R08", name: "🌟 Star Auditorium", capacity: 100, type: "Lecture" },
+    { id: "L01", name: "🧪 Quantum Lab", capacity: 32, type: "Lab" }, { id: "L02", name: "🔬 Bio Lab", capacity: 38, type: "Lab" },
+    { id: "L03", name: "🧬 Advanced Lab", capacity: 45, type: "Lab" }, { id: "L04", name: "⚙️ Robotics Lab", capacity: 42, type: "Lab" },
+    { id: "L05", name: "💻 Computing Lab", capacity: 50, type: "Lab" }, { id: "L06", name: "🔭 Physics Lab", capacity: 35, type: "Lab" },
+    { id: "E01", name: "🎭 Event Space", capacity: 80, type: "Event" }, { id: "E02", name: "🏛️ Grand Hall", capacity: 110, type: "Event" },
+    { id: "E03", name: "🎪 Atrium", capacity: 95, type: "Event" }, { id: "E04", name: "🌿 Garden Pavilion", capacity: 130, type: "Event" },
+    { id: "E05", name: "🎵 Concert Hall", capacity: 150, type: "Event" }, { id: "E06", name: "🏟️ Expo Center", capacity: 200, type: "Event" }
+  ];
+
+  let schedules = [], allocationHistory = [];
+  let genderChart, typeChart, utilChart;
+
+  // --- LOGIN HANDLER ---
+  function handleLogin() {
+    let user = document.getElementById('loginUsername').value;
+    let pass = document.getElementById('loginPassword').value;
+    if (user === 'admin' && pass === 'admin123') {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+    } else {
+      document.getElementById('loginError').innerText = 'Invalid credentials. Use admin / admin123';
+    }
+  }
+
+  function logout() {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginUsername').value = 'admin';
+    document.getElementById('loginPassword').value = 'admin123';
+    document.getElementById('loginError').innerText = '';
+  }
+
+  // --- CORE FUNCTIONS ---
+  function updateTotal() { let b = +document.getElementById('allocBoys').value || 0, g = +document.getElementById('allocGirls').value || 0; let t = b+g; document.getElementById('allocTotal').value = t; let p = t ? (b/t)*100 : 50; document.getElementById('allocGenderFill').style.width = p+'%'; document.getElementById('allocBoysPct').innerHTML = `Boys ${Math.round(p)}%`; document.getElementById('allocGirlsPct').innerHTML = `Girls ${Math.round(100-p)}%`; return t; }
+  function selectOptimalRoom(total, boys, girls, type) { if(total<=0) return null; let c = ROOMS.filter(r=>r.type===type && r.capacity>=total); if(!c.length) return null; let scored = c.map(r=>{ let waste=r.capacity-total, penalty=waste*0.68, imb=0, totG=boys+girls; if(totG){ let br=boys/totG, g=Math.abs(br-0.5); imb=g*30; if(girls<boys && waste>5) imb+=Math.min((waste/(girls+2))*1.4,12); if(br>0.65 && waste<6) imb+=7; } let occ=total/r.capacity, occBonus=occ<0.5?8:(occ>0.88?-3:0); return {room:r, score:penalty+imb+occBonus}; }); scored.sort((a,b)=>a.score-b.score); return scored[0].room; }
+  function generateReason(r,t,b,g){ if(!r) return ""; let waste=r.capacity-t, imb=(b+g)?Math.abs(b-g)/(b+g):0; if(waste===0) return `🎯 Perfect match (${r.capacity}). Zero waste.`; if(waste<=3) return `📐 Near-perfect (${waste} spare).`; if(imb>0.32) return `⚖️ Best gender balance despite ${waste} spare.`; return `🧠 Smart: ${r.name} (${r.capacity}) - minimal waste.`; }
+  function getWarnings(r,t,b,g){ if(!r) return ["❌ No room"]; let waste=r.capacity-t, imb=(b+g)?Math.abs(b-g)/(b+g):0, w=[]; if(imb>0.35) w.push("⚠ Seating imbalance"); if(waste>t*0.42) w.push("⚠ High wastage"); if(!w.length) w.push("✅ Optimal"); return w; }
+  
+  function runAllocation(){ let total=updateTotal(), boys=+document.getElementById('allocBoys').value||0, girls=+document.getElementById('allocGirls').value||0, type=document.querySelector('#allocTypeTabs .type-btn.active').dataset.type, best=selectOptimalRoom(total,boys,girls,type); let area=document.getElementById('allocResultArea'); if(!best){ area.innerHTML='<div class="result-card">❌ No suitable room</div>'; return; } allocationHistory.unshift({room:best.name,total,boys,girls,type,date:new Date().toLocaleTimeString()}); if(allocationHistory.length>8) allocationHistory.pop(); area.innerHTML=`<div class="result-card"><div class="smart-badge">🤖 AI Suggestion</div><div style="font-size:1.9rem;font-weight:800">${best.name}</div><div>Capacity: ${best.capacity} seats</div><div>💡 ${generateReason(best,total,boys,girls)}</div><div>${getWarnings(best,total,boys,girls).map(w=>`<span class="warning-tag ${w.includes('✅')?'success-tag':''}">${w}</span>`).join('')}</div></div>`; updateAnalytics(); renderRoomsAlloc(best,total); }
+  function renderRoomsAlloc(sel,tot){ document.getElementById('allocRoomsGrid').innerHTML=ROOMS.map(r=>`<div class="room-badge ${sel?.id===r.id?'selected':''}"><div><b>${r.name}</b></div><div>${r.capacity} seats · ${r.type}</div>${tot>0 && r.capacity>=tot?`<div>↳ ${Math.round(tot/r.capacity*100)}% fit</div>`:''}</div>`).join(''); }
+  function timeToMin(t){ let [h,m]=t.split(':').map(Number); return h*60+(m||0); }
+  function addSchedule(){ let subj=document.getElementById('schedSubject').value.trim(), fac=document.getElementById('schedFaculty').value.trim(), day=document.getElementById('schedDay').value, start=document.getElementById('schedStart').value, end=document.getElementById('schedEnd').value, type=document.getElementById('schedType').value, students=+document.getElementById('schedStudents').value||1; if(!subj){document.getElementById('schedConflict').innerText='Subject required'; return;} if(timeToMin(start)>=timeToMin(end)){document.getElementById('schedConflict').innerText='End after start'; return;} let room=ROOMS.filter(r=>r.type===type && r.capacity>=students).sort((a,b)=>a.capacity-b.capacity)[0]; if(!room){document.getElementById('schedConflict').innerText=`No ${type} room fits ${students}`; return;} if(schedules.some(s=>s.day===day && s.roomId===room.id && !(timeToMin(end)<=timeToMin(s.start) || timeToMin(start)>=timeToMin(s.end)))){document.getElementById('schedConflict').innerText=`Conflict on ${day}`; return;} schedules.push({id:Date.now(),subject:subj,faculty:fac,day,start,end,type,students,roomId:room.id,roomName:room.name}); document.getElementById('schedSubject').value=''; renderTimetable(); updateAnalytics(); }
+  window.deleteSchedule = function(id){ schedules=schedules.filter(s=>s.id!==id); renderTimetable(); updateAnalytics(); }
+  function renderTimetable(){ let days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]; let allTimes=[...new Set(schedules.flatMap(s=>[s.start,s.end]))].sort(); if(!allTimes.length) allTimes=["09:00","10:00","11:00","14:00","15:00"]; let html=`<div class="week-grid"><div></div>${days.map(d=>`<div class="grid-header">${d.slice(0,3)}</div>`).join('')}</div>`; for(let t of allTimes.slice(0,7)){ html+=`<div class="week-grid"><div class="grid-header">${t}</div>`; for(let day of days){ let ev=schedules.find(e=>e.day===day && e.start===t); if(ev) html+=`<div><div class="event-block" onclick="deleteSchedule(${ev.id})">📚 ${ev.subject}<br>🏫 ${ev.roomName}<br>${ev.start}-${ev.end}</div></div>`; else html+=`<div style="background:rgba(255,240,245,0.3); min-height:60px;"></div>`; } html+=`</div>`; } document.getElementById('schedTimetable').innerHTML=html; }
+
+  function updateAnalytics(){
+    document.getElementById('totalRoomsStat').innerText=ROOMS.length;
+    document.getElementById('totalSchedulesStat').innerText=schedules.length;
+    let avgBoys=allocationHistory.reduce((a,b)=>a+(b.boys||0),0)/(allocationHistory.length||1);
+    let avgGirls=allocationHistory.reduce((a,b)=>a+(b.girls||0),0)/(allocationHistory.length||1);
+    document.getElementById('recentActivity').innerHTML=allocationHistory.slice(0,3).map(h=>`✨ ${h.room} · ${h.total} students`).join('<br>')||'✨ No activity';
+    let roomHtml=ROOMS.map(r=>`<span style="display:inline-block; margin:4px; background:white; border-radius:30px; padding:5px 14px;">${r.name} (${r.capacity})</span>`).join('');
+    document.getElementById('mainRoomList').innerHTML=roomHtml;
+    document.getElementById('roomCountDisplay').innerHTML=`(${ROOMS.length} total)`;
+    document.getElementById('analyticsHistory').innerHTML=allocationHistory.map(h=>`<div style="padding:8px; border-bottom:1px solid #ffd0dd;">🏫 ${h.room} | ${h.total} students | ${h.date}</div>`).join('')||'<p>No history</p>';
+    
+    // Update graphical charts
+    let lectureCount = allocationHistory.filter(h=>h.type==='Lecture').length;
+    let labCount = allocationHistory.filter(h=>h.type==='Lab').length;
+    let eventCount = allocationHistory.filter(h=>h.type==='Event').length;
+    let totalAllocs = allocationHistory.length || 1;
+    let avgBoysVal = allocationHistory.reduce((a,b)=>a+(b.boys||0),0)/totalAllocs;
+    let avgGirlsVal = allocationHistory.reduce((a,b)=>a+(b.girls||0),0)/totalAllocs;
+    
+    if(genderChart) genderChart.destroy();
+    if(typeChart) typeChart.destroy();
+    if(utilChart) utilChart.destroy();
+    
+    let ctxGen = document.getElementById('genderChart').getContext('2d');
+    genderChart = new Chart(ctxGen, { type: 'doughnut', data: { labels: ['Avg Boys', 'Avg Girls'], datasets: [{ data: [avgBoysVal, avgGirlsVal], backgroundColor: ['#60a5fa', '#f72d72'], borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: true } });
+    let ctxType = document.getElementById('typeChart').getContext('2d');
+    typeChart = new Chart(ctxType, { type: 'bar', data: { labels: ['Lectures', 'Labs', 'Events'], datasets: [{ label: 'Number of Allocations', data: [lectureCount, labCount, eventCount], backgroundColor: ['#f72d72', '#60a5fa', '#f59e0b'], borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: true } });
+    let ctxUtil = document.getElementById('utilChart').getContext('2d');
+    let roomNames = ROOMS.slice(0,8).map(r=>r.name.split(' ')[0]);
+    let roomUsage = ROOMS.slice(0,8).map(r => allocationHistory.filter(h=>h.room===r.name).length * 12);
+    utilChart = new Chart(ctxUtil, { type: 'line', data: { labels: roomNames, datasets: [{ label: 'Usage Score', data: roomUsage, borderColor: '#f72d72', backgroundColor: 'rgba(247,45,114,0.1)', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: true } });
+  }
+
+  function filterRooms(){ let q=document.getElementById('roomSearch').value.toLowerCase(); let filtered=ROOMS.filter(r=>r.name.toLowerCase().includes(q)); document.getElementById('mainRoomList').innerHTML=filtered.map(r=>`<span style="display:inline-block; margin:4px; background:white; border-radius:30px; padding:5px 14px;">${r.name} (${r.capacity})</span>`).join(''); }
+  function exportToExcel(data, filename){ let ws=XLSX.utils.json_to_sheet(data); let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Data'); XLSX.writeFile(wb,filename+'.xlsx'); }
+  function printDiv(divId){ let printContents=document.getElementById(divId).innerHTML; let original=document.body.innerHTML; document.body.innerHTML=printContents; window.print(); document.body.innerHTML=original; location.reload(); }
+  function navigateTo(pageId){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); document.getElementById(pageId+'Page').classList.add('active-page'); document.querySelectorAll('.nav-btn[data-page]').forEach(btn=>btn.classList.remove('active')); document.querySelector(`.nav-btn[data-page="${pageId}"]`).classList.add('active'); if(pageId==='schedule') renderTimetable(); if(pageId==='analytics') updateAnalytics(); }
+
+  // Event Listeners
+  document.getElementById('darkModeToggle').onclick=()=>document.body.classList.toggle('dark-mode');
+  document.getElementById('logoutBtn').onclick=logout;
+  document.getElementById('exportAllocBtn').onclick=()=>exportToExcel(allocationHistory,'allocations');
+  document.getElementById('exportScheduleBtn').onclick=()=>exportToExcel(schedules,'schedule');
+  document.getElementById('printScheduleBtn').onclick=()=>printDiv('schedTimetable');
+  document.getElementById('printDashboardBtn').onclick=()=>printDiv('mainPage');
+  document.querySelectorAll('.nav-btn[data-page]').forEach(btn=>btn.addEventListener('click',()=>navigateTo(btn.dataset.page)));
+  document.querySelectorAll("#allocTypeTabs .type-btn").forEach(btn=>btn.addEventListener("click",function(){ document.querySelectorAll("#allocTypeTabs .type-btn").forEach(b=>b.classList.remove('active')); this.classList.add('active'); runAllocation(); }));
+  document.getElementById("runAllocBtn").addEventListener("click",runAllocation);
+  document.getElementById("allocBoys").addEventListener("input",()=>{updateTotal();runAllocation();});
+  document.getElementById("allocGirls").addEventListener("input",()=>{updateTotal();runAllocation();});
+  document.getElementById("addSchedBtn").addEventListener("click",addSchedule);
+  
+  updateTotal(); runAllocation(); updateAnalytics(); renderTimetable();
+</script>
+</body>
+</html>
